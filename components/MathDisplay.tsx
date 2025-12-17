@@ -24,7 +24,8 @@ const MathDisplay: React.FC<MathDisplayProps> = ({ math, block = false, classNam
       try {
         window.katex.render(cleanMath, containerRef.current, {
           throwOnError: false,
-          displayMode: block
+          displayMode: block,
+          output: 'htmlAndMathml' // Better for accessibility
         });
       } catch (e) {
         containerRef.current.textContent = math;
@@ -33,7 +34,12 @@ const MathDisplay: React.FC<MathDisplayProps> = ({ math, block = false, classNam
   }, [math, block]);
 
   return (
-    <span ref={containerRef} className={`inline-block ${className}`} />
+    <span 
+      ref={containerRef} 
+      className={`inline-block ${className}`}
+      role="math"
+      aria-label={`Mathematical expression: ${math}`}
+    />
   );
 };
 
