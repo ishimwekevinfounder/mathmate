@@ -1,8 +1,6 @@
 
-import { GoogleGenAI, Type, GenerateContentResponse } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 import { MathResponse, HintResponse } from "../types";
-
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
 
 const MATH_SOLVER_SYSTEM_PROMPT = `
 You are "MathMate", the world's most patient, warm, and encouraging Math Tutor. 
@@ -22,7 +20,8 @@ Solver Rules:
 `;
 
 export async function solveMathProblem(problem: string, imageData?: { data: string, mimeType: string }): Promise<MathResponse> {
-  const parts: any[] = [{ text: `Problem: ${problem || "Solve the problem in the image."}` }];
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const parts: any[] = [{ text: problem || "Solve the problem in the image." }];
   
   if (imageData) {
     parts.unshift({
@@ -35,7 +34,7 @@ export async function solveMathProblem(problem: string, imageData?: { data: stri
 
   const response = await ai.models.generateContent({
     model: "gemini-3-pro-preview",
-    contents: imageData ? { parts } : `Problem: ${problem}`,
+    contents: [{ role: 'user', parts }],
     config: {
       systemInstruction: MATH_SOLVER_SYSTEM_PROMPT,
       responseMimeType: "application/json",
@@ -45,16 +44,16 @@ export async function solveMathProblem(problem: string, imageData?: { data: stri
           originalEquation: { type: Type.STRING },
           formattedEquation: { type: Type.STRING, description: "The equation in LaTeX format" },
           overallConcept: { type: Type.STRING, description: "A simple overview of the math concept" },
-          encouragement: { type: Type.STRING, description: "A warm, personalized positive affirmation about the user's curiosity or progress" },
+          encouragement: { type: Type.STRING, description: "A warm, personalized positive affirmation" },
           steps: {
             type: Type.ARRAY,
             items: {
               type: Type.OBJECT,
               properties: {
-                math: { type: Type.STRING, description: "The math for this specific step in LaTeX" },
-                explanation: { type: Type.STRING, description: "Simple explanation of what is happening" },
-                why: { type: Type.STRING, description: "The logical reason for this step" },
-                symbolsIntroduced: { type: Type.ARRAY, items: { type: Type.STRING }, description: "List of any symbols explained" }
+                math: { type: Type.STRING, description: "LaTeX math" },
+                explanation: { type: Type.STRING },
+                why: { type: Type.STRING },
+                symbolsIntroduced: { type: Type.ARRAY, items: { type: Type.STRING } }
               },
               required: ["math", "explanation", "why"]
             }
@@ -66,15 +65,17 @@ export async function solveMathProblem(problem: string, imageData?: { data: stri
   });
 
   try {
-    return JSON.parse(response.text);
+    const text = response.text || "{}";
+    return JSON.parse(text);
   } catch (error) {
     console.error("Failed to parse Gemini response:", error);
-    throw new Error("I'm so sorry, I had a little trouble with that one. Could you try rephrasing it for me? I really want to help!");
+    throw new Error("I'm so sorry, I had a little trouble with that one. Could you try rephrasing it for me?");
   }
 }
 
 export async function getHint(problem: string, imageData?: { data: string, mimeType: string }): Promise<HintResponse> {
-  const parts: any[] = [{ text: `Problem: ${problem || "Give a hint for the problem in the image."}` }];
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const parts: any[] = [{ text: problem || "Give a hint for the problem in the image." }];
   
   if (imageData) {
     parts.unshift({
@@ -87,7 +88,7 @@ export async function getHint(problem: string, imageData?: { data: string, mimeT
 
   const response = await ai.models.generateContent({
     model: "gemini-3-pro-preview",
-    contents: imageData ? { parts } : `Problem: ${problem}`,
+    contents: [{ role: 'user', parts }],
     config: {
       systemInstruction: "You are MathMate. Do NOT solve the problem. Provide a small, gentle hint. Be very encouraging. Tell the user they are on the right track.",
       responseMimeType: "application/json",
@@ -96,7 +97,7 @@ export async function getHint(problem: string, imageData?: { data: string, mimeT
         properties: {
           hint: { type: Type.STRING },
           guidingQuestion: { type: Type.STRING },
-          encouragement: { type: Type.STRING, description: "A warm, encouraging remark about the user's effort" }
+          encouragement: { type: Type.STRING }
         },
         required: ["hint", "guidingQuestion", "encouragement"]
       }
@@ -104,8 +105,9 @@ export async function getHint(problem: string, imageData?: { data: string, mimeT
   });
 
   try {
-    return JSON.parse(response.text);
+    const text = response.text || "{}";
+    return JSON.parse(text);
   } catch (error) {
-    throw new Error("I couldn't quite find the right hint yet, but don't give up! Let's try looking at it together in another way.");
+    throw new Error("I couldn't quite find the right hint yet, but don't give up!");
   }
 }
