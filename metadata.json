@@ -1,0 +1,8 @@
+{
+  "name": "MathMate AI Tutor",
+  "description": "A patient, step-by-step interactive math tutor that explains concepts like a human teacher would, focusing on the 'why' and making math accessible for beginners.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
