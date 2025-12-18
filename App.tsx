@@ -67,8 +67,12 @@ const App: React.FC = () => {
     if (isRecording) {
       recognitionRef.current?.stop();
     } else {
-      recognitionRef.current?.start();
-      setIsRecording(true);
+      try {
+        recognitionRef.current?.start();
+        setIsRecording(true);
+      } catch (e) {
+        console.error("Failed to start speech recognition:", e);
+      }
     }
   };
 
@@ -126,7 +130,7 @@ const App: React.FC = () => {
         const aiMessage: ChatMessage = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
-          content: solution.encouragement,
+          content: String(solution.encouragement || "Let's solve this!"),
           type: 'math-solution',
           data: solution,
         };
@@ -136,7 +140,7 @@ const App: React.FC = () => {
         const aiMessage: ChatMessage = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
-          content: hint.encouragement,
+          content: String(hint.encouragement || "Here's a hint for you!"),
           type: 'hint',
           data: hint,
         };
@@ -234,7 +238,7 @@ const App: React.FC = () => {
           >
             <div className={`max-w-[95%] md:max-w-[85%] ${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-2xl rounded-tr-sm px-4 py-2 shadow-md' : 'w-full'}`}>
               {msg.role === 'user' ? (
-                <div className="font-medium">{msg.content}</div>
+                <div className="font-medium">{String(msg.content)}</div>
               ) : (
                 <div className="space-y-4">
                   {msg.content && (
@@ -243,7 +247,7 @@ const App: React.FC = () => {
                           <Smile className="w-6 h-6 text-indigo-600" />
                        </div>
                        <p className="text-slate-700 font-medium italic">
-                        "{msg.content}"
+                        "{String(msg.content)}"
                       </p>
                     </div>
                   )}
@@ -253,7 +257,7 @@ const App: React.FC = () => {
                       <div className="p-5 border-b border-slate-100 bg-indigo-50/40 flex items-center justify-between">
                         <div>
                           <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-1">Our Challenge</p>
-                          <MathDisplay math={(msg.data as MathResponse).formattedEquation} className="text-2xl font-bold text-indigo-900" block={false} />
+                          <MathDisplay math={String((msg.data as MathResponse).formattedEquation)} className="text-2xl font-bold text-indigo-900" block={false} />
                         </div>
                         <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-2xl border border-indigo-100 shadow-sm" aria-hidden="true">
                           <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
@@ -262,7 +266,7 @@ const App: React.FC = () => {
                       </div>
                       
                       <div className="p-6 md:p-8" role="list" aria-label="Solution steps">
-                        {(msg.data as MathResponse).steps.map((step, idx) => (
+                        {(msg.data as MathResponse).steps?.map((step, idx) => (
                           <StepItem key={idx} step={step} index={idx} />
                         ))}
                       </div>
@@ -273,7 +277,7 @@ const App: React.FC = () => {
                         </div>
                         <div>
                           <p className="text-xs font-bold text-emerald-600 uppercase tracking-widest mb-1">The Lesson Learned</p>
-                          <p className="text-slate-700 font-medium leading-relaxed">{(msg.data as MathResponse).overallConcept}</p>
+                          <p className="text-slate-700 font-medium leading-relaxed">{String((msg.data as MathResponse).overallConcept || "")}</p>
                         </div>
                       </div>
                     </div>
@@ -294,14 +298,14 @@ const App: React.FC = () => {
                         </div>
                       </div>
                       <p className="text-slate-700 text-lg italic leading-relaxed pl-2 border-l-4 border-amber-200">
-                        "{(msg.data as HintResponse).hint}"
+                        "{String((msg.data as HintResponse).hint || "")}"
                       </p>
                       <div className="bg-amber-50/50 p-5 rounded-2xl border border-amber-100 shadow-inner">
                         <div className="flex items-center gap-2 mb-2">
                            <BrainCircuit className="w-4 h-4 text-amber-600" aria-hidden="true" />
                            <p className="text-xs font-bold text-amber-600 uppercase tracking-wider">Your turn to wonder:</p>
                         </div>
-                        <p className="text-slate-800 font-bold text-lg">{(msg.data as HintResponse).guidingQuestion}</p>
+                        <p className="text-slate-800 font-bold text-lg">{String((msg.data as HintResponse).guidingQuestion || "")}</p>
                       </div>
                     </div>
                   )}
